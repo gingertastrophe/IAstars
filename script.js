@@ -11,6 +11,10 @@ const NEON_COLORS = [
     [128, 255, 0],    // Lime
     [0, 191, 255]     // Deep Sky Blue
 ];
+const CURSOR_POINTS = 12;
+const CURSOR_RADIUS = 15;
+const CURSOR_ROTATION_SPEED = 0.02;
+let cursorAngle = 0;
 
 class Star {
     constructor(x, y, z) {
@@ -111,7 +115,9 @@ class Star {
 }
 
 function setup() {
-    createCanvas(7000, 742);
+    pixelDensity(1);
+    let canvas = createCanvas(max(windowWidth, 7000), windowHeight);
+    canvas.style('display', 'block');
     
     // Create stars distributed across the entire viewport
     for (let i = 0; i < NUM_STARS; i++) {
@@ -119,6 +125,18 @@ function setup() {
         let y = random(height * 0.05, height * 0.95);
         let z = random(-100, 100);
         stars.push(new Star(x, y, z));
+    }
+}
+
+function windowResized() {
+    resizeCanvas(max(windowWidth, 7000), windowHeight);
+    // Redistribute stars if needed
+    if (stars.length > 0) {
+        stars.forEach(star => {
+            if (star.pos.y > height) {
+                star.pos.y = random(height * 0.05, height * 0.95);
+            }
+        });
     }
 }
 
@@ -130,6 +148,7 @@ function draw() {
         star.update();
         star.show();
     });
+    drawCursor(mouseX, mouseY);
 }
 
 function mousePressed() {
@@ -159,4 +178,30 @@ function calculateStarDensity() {
     const baseStars = 300; // Original number for 1920x1080
     const baseArea = 1920 * 1080;
     return Math.floor((totalArea / baseArea) * baseStars);
+}
+
+function drawCursor(x, y) {
+    push();
+    translate(x, y);
+    rotate(cursorAngle);
+    noFill();
+    strokeWeight(1);
+    
+    // Draw multiple rotating circles at different angles
+    for (let i = 0; i < 3; i++) {
+        stroke(255, 100);
+        rotate(PI / 4);
+        beginShape();
+        for (let j = 0; j < CURSOR_POINTS; j++) {
+            let angle = map(j, 0, CURSOR_POINTS, 0, TWO_PI);
+            let r = CURSOR_RADIUS * (0.8 + 0.2 * sin(angle * 2 + frameCount * 0.1));
+            let px = cos(angle) * r;
+            let py = sin(angle) * r * 0.5; // Squash for 3D effect
+            vertex(px, py);
+        }
+        endShape(CLOSE);
+    }
+    pop();
+    
+    cursorAngle += CURSOR_ROTATION_SPEED;
 }
